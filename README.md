@@ -1,39 +1,41 @@
-# Json Rpc
-Implementation of {JSON RPC 2.0}[link:http://groups.google.com/group/json-rpc/web/json-rpc-2-0] protocol.
+Json Rpc
+========
+
+Implementation of [JSON RPC 2.0](http://groups.google.com/group/json-rpc/web/json-rpc-2-0) protocol.
 It allows you to create easily json rpc server.
 
-## Usage
-### Simple Rack example
+Usage
+-----
 
+Simple Rack example:
+
+~~~~~~ {ruby}
 class SyncApp
   include JsonRpc
-
   def call env
     result = dispatch(env) { |e|
       logger.info "#{e} backtrace: #{e.backtrace.join "\n"}"
     }
     result
   end
-
   def rpc_sum a, b
     a + b
   end
 end
-
 run SyncApp.new
+~~~~~~
 
-### Asynchronous Event Machine example
+Asynchronous Event Machine example:
+
+~~~~~~ {ruby}
 class AsyncApp
   include JsonRpc
-
   AsyncResponse = [-1, {}, []].freeze
-
   def call env
     result = dispatch(env)
     env['async.callback'].call result
     AsyncResponse
   end
-
   def rpc_sum a, b
     result = Rpc::AsyncResult.new
     EventMachine::next_tick do
@@ -43,6 +45,7 @@ class AsyncApp
     result
   end
 end
+~~~~~~
 
 ### License
 Copyright 2011 Helios Technologies Ltd. (http://www.heliostech.hk)
