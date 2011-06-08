@@ -51,10 +51,11 @@ module JsonRpc
       end
     end
 
-    def self.error index, id
+    def self.error index, id = nil
       id = nil unless id.is_a? Fixnum
       ex = Rpc::Error.new *ErrorProtocol[index]
       ex.id = id
+      ex
     end
 
     def self.validate request
@@ -67,10 +68,19 @@ module JsonRpc
 
     def self.parse env
       begin
-        JSON.parse case env["REQUEST_METHOD"]
-                   when "POST" then env["rack.input"].read
-                   when "GET" then URI.decode(env["QUERY_STRING"])
-                   end
+        case env["REQUEST_METHOD"]
+        when "POST"
+          JSON.parse(env["rack.input"].read)
+        when "GET"
+          req = Rack::Request.new(env)
+          obj = req.params
+          obj["id"] = obj["id"] ? obj["id"].to_i : nil
+          obj["params"] = JSON::parse(obj["params"])
+          obj
+        else
+          raise error :invalid_request
+        end
+
       rescue JSON::ParserError
         raise error :parse_error
       end
@@ -81,13 +91,13 @@ module JsonRpc
 
       unless ctrl.respond_to? method
         raise error :method_not_found, request["id"]
-      result = ctrl.send()
-      if result.is_a? AsyncResult
-        result.id = request["id"]
-        return result
+        result = ctrl.send(method, *params)
+        if result.is_a? AsyncResult
+          result.id = request["id"]
+          return result
+        end
+        forge_response result, request["id"]
       end
-      forge_response result, request["id"]
-
     end
 
     def self.forge_response result, id = nil

@@ -6,21 +6,22 @@ require 'uri'
 class All < Test::Unit::TestCase
   include JsonRpc
 
-  def test_get_post_parse
-    req_string = '{"jsonrpc": "2.0", "method": "subtract", "params": [42, 23], "id": 1}'
+  ReqSubtract = {"jsonrpc"=>"2.0", "method"=>"subtract", "params"=>[42, 23], "id"=>1}
+  ReqSubtractString = JSON::dump(ReqSubtract)
 
-    # POST REQUEST
-    req_hash = JSON.parse req_string
-    opts = {:input => req_string,
+  def test_post_parse
+    opts = {
+      :input => ReqSubtractString,
       :method => 'POST'
     }
     rs = Rpc::parse Rack::MockRequest.env_for("", opts)
+    assert_equal ReqSubtract, rs
+  end
 
-    # GET REQUEST
-    assert_equal req_hash, rs
+  def test_get_parse
     opts = {:method => 'GET'}
-    rs = Rpc::parse Rack::MockRequest.env_for("/?"+URI.encode(req_string), opts)
-    assert_equal req_hash, rs
+    rs = Rpc::parse Rack::MockRequest.env_for("/?method=subtract&params=[42,23]&id=1&jsonrpc=2.0")
+    assert_equal ReqSubtract, rs
   end
 
   def test_invalid_json_post_parse
