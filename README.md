@@ -10,6 +10,8 @@ Usage
 Simple Rack example:
 
 ~~~~~~ {ruby}
+require 'json-rpc'
+
 class SyncApp
   include JsonRpc
   def call env
@@ -29,6 +31,8 @@ run SyncApp.new
 Asynchronous Event Machine example:
 
 ~~~~~~ {ruby}
+require 'json-rpc'
+
 class AsyncApp
   include JsonRpc
   AsyncResponse = [-1, {}, []].freeze

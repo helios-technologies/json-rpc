@@ -1,5 +1,6 @@
 # -*- RUBY -*-
-require 'json_rpc'
+$: << File::join(File::dirname(__FILE__), "..", "lib")
+require 'json-rpc'
 
 class SyncApp
   include JsonRpc

@@ -44,7 +44,7 @@ module JsonRpc
       end
       def result
         res = {"jsonrpc" => "2.0", "id" => id,
-          "error" => {"code" => code, "message" => message}
+          "error" => {"code" => code, "message" => msg}
         }
         res.delete_if { |k, v| v == nil}
         res.to_json
@@ -81,7 +81,7 @@ module JsonRpc
           raise error :invalid_request
         end
 
-      rescue JSON::ParserError
+      rescue JSON::ParserError, Exception
         raise error :parse_error
       end
     end
@@ -91,13 +91,14 @@ module JsonRpc
 
       unless ctrl.respond_to? method
         raise error :method_not_found, request["id"]
-        result = ctrl.send(method, *params)
-        if result.is_a? AsyncResult
-          result.id = request["id"]
-          return result
-        end
-        forge_response result, request["id"]
       end
+
+      result = ctrl.send(method, *params)
+      if result.is_a? AsyncResult
+        result.id = request["id"]
+        return result
+      end
+      forge_response result, request["id"]
     end
 
     def self.forge_response result, id = nil
