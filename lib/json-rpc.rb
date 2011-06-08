@@ -38,16 +38,23 @@ module JsonRpc
 
     class Error < RuntimeError
       attr_reader :status, :code, :msg
+      attr_accessor :id
       def initialize status, code, msg
         @status, @code, @msg = status, code, msg
       end
       def result
-        # TODO: return as json string the error
+        res = {"jsonrpc" => "2.0", "id" => id,
+          "error" => {"code" => code, "message" => message}
+        }
+        res.delete_if { |k, v| v == nil}
+        res.to_json
       end
     end
 
-    def self.error index
-      Rpc::Error.new *ErrorProtocol[index]
+    def self.error index, id
+      id = nil unless id.is_a? Fixnum
+      ex = Rpc::Error.new *ErrorProtocol[index]
+      ex.id = id
     end
 
     def self.validate request
@@ -55,7 +62,7 @@ module JsonRpc
         request["method"].kind_of?(String) and
         request["method"] != "" and
         (request["id"] == nil or request["id"].is_a?(Fixnum))
-      raise error :invalid_request
+      raise error :invalid_request, request["id"]
     end
 
     def self.parse env
@@ -70,16 +77,22 @@ module JsonRpc
     end
 
     def self.route request, ctrl
-      #TODO call ctrl.send("rpc_" + method)
-      result = ctrl.rpc_sum(2, 3)
+      method, params = Prefix + request["method"], request["params"]
+
+      unless ctrl.respond_to? method
+        raise error :method_not_found, request["id"]
+      result = ctrl.send()
       if result.is_a? AsyncResult
+        result.id = request["id"]
         return result
       end
-      forge_response result
+      forge_response result, request["id"]
+
     end
 
-    def self.forge_response result
-      result.to_json #TODO: Wrap result to json protocol
+    def self.forge_response result, id = nil
+      return nil if id == nil
+      {"jsonrpc" => "2.0", "id" => id, "result" => result}.to_json
     end
 
     # The class RpcDeferrable is useful helps you to build a Json Rpc server
@@ -87,8 +100,11 @@ module JsonRpc
     class AsyncResult
       include EventMachine::Deferrable
 
+      attr_reader :response
+      attr_accessor :id
+
       def reply obj
-        @callback.call(Rpc::forge_response(obj))
+        @callback.call(Rpc::forge_response(obj, @id))
       end
 
       #FIXME thin specific

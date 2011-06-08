@@ -50,5 +50,9 @@ class All < Test::Unit::TestCase
     }
   end
 
-  
+  def test_response_forging
+    assert_equal({"jsonrpc" => "2.0", "result" => 12, "id" => 7},
+                 JSON.parse(Rpc::forge_response(12, 7)))
+    assert_equal(nil, Rpc::forge_response(12))
+  end
 end
