@@ -14,10 +14,11 @@ class SyncApp
   include JsonRpc
   def call env
     result = dispatch(env) { |e|
-      logger.info "#{e} backtrace: #{e.backtrace.join "\n"}"
+      logger.info "#{e}"
     }
     result
   end
+
   def rpc_sum a, b
     a + b
   end
@@ -36,6 +37,7 @@ class AsyncApp
     env['async.callback'].call result
     AsyncResponse
   end
+
   def rpc_sum a, b
     result = Rpc::AsyncResult.new
     EventMachine::next_tick do
@@ -48,7 +50,7 @@ end
 ~~~~~~
 
 ### License
-Copyright 2011 Helios Technologies Ltd. (http://www.heliostech.hk)
+Copyright 2011 [Helios Technologies Ltd.](http://www.heliostech.hk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

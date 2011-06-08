@@ -39,20 +39,27 @@ module JsonRpc
       def initialize status, code, msg
         @status, @code, @msg = status, code, msg
       end
+      def result
+        # TODO: return as json string the error
+      end
     end
 
     def self.error index
       Rpc::Error.new *ErrorProtocol[index]
     end
 
-    def self.validate query
+    def self.validate request
+      # TODO: validate the json request
       200
     end
 
     def self.parse env
+      # TODO return parsed request
+      # Get from POST data or GET params
     end
 
     def self.route request, ctrl
+      #TODO call ctrl.send("rpc_" + method)
       result = ctrl.rpc_sum(2, 3)
       if result.is_a? AsyncResult
         return result
@@ -64,11 +71,6 @@ module JsonRpc
       result.to_json #TODO: Wrap result to json protocol
     end
 
-    # Status is a symbol representing the result status
-    # It can be :success or :error
-    def self.reply status, response, id = nil
-    end
-
     # The class RpcDeferrable is useful helps you to build a Json Rpc server
     # into an asynchronous way
     class AsyncResult
@@ -78,6 +80,7 @@ module JsonRpc
         @callback.call(Rpc::forge_response(obj))
       end
 
+      #FIXME thin specific
       def each &blk
         @callback = blk
       end
