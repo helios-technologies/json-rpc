@@ -1,5 +1,6 @@
-
 require 'json'
+require 'eventmachine'
+require 'uri'
 
 module JsonRpc
 
@@ -9,9 +10,9 @@ module JsonRpc
   # More details in http://groups.google.com/group/json-rpc/web/json-rpc-2-0
   def dispatch env, &ecb
     begin
-      request = Rpc::parse(env)
+      request = Rpc::parse env
       status = Rpc::validate request
-      result = Rpc::route(request, self)
+      result = Rpc::route request, self
 
     rescue Rpc::Error => e
       status = e.status
@@ -50,13 +51,22 @@ module JsonRpc
     end
 
     def self.validate request
-      # TODO: validate the json request
-      200
+      return 200 if request["jsonrpc"] == Version and
+        request["method"].kind_of?(String) and
+        request["method"] != "" and
+        (request["id"] == nil or request["id"].is_a?(Fixnum))
+      raise error :invalid_request
     end
 
     def self.parse env
-      # TODO return parsed request
-      # Get from POST data or GET params
+      begin
+        JSON.parse case env["REQUEST_METHOD"]
+                   when "POST" then env["rack.input"].read
+                   when "GET" then URI.decode(env["QUERY_STRING"])
+                   end
+      rescue JSON::ParserError
+        raise error :parse_error
+      end
     end
 
     def self.route request, ctrl
