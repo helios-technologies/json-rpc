@@ -8,7 +8,7 @@ module JsonRpc
   # The method should be prefixed by rpc_
   # If the method doesn't exists, an error will be return in JSON
   # More details in http://groups.google.com/group/json-rpc/web/json-rpc-2-0
-  def dispatch env, &ecb
+  def rpc_call env, &ecb
     begin
       request = Rpc::parse env
       status = Rpc::validate request
@@ -61,8 +61,7 @@ module JsonRpc
     def self.validate request
       return 200 if request["jsonrpc"] == Version and
         request["method"].kind_of?(String) and
-        request["method"] != "" and
-        (request["id"] == nil or request["id"].is_a?(Fixnum))
+        request["method"] != ""
       raise error :invalid_request, request["id"]
     end
 
