@@ -53,6 +53,13 @@ class AsyncApp
 end
 ~~~~~~
 
+Test it works:
+
+~~~~~~ {sh}
+$ curl "localhost:3000/rpc?jsonrpc=2.0&method=sum&params=%5B21%2C21%5D"
+{"jsonrpc":"2.0","id":0,"result":42}
+~~~~~~
+
 ### License
 Copyright 2011 [Helios Technologies Ltd.](http://www.heliostech.hk)
 

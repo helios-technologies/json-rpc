@@ -38,9 +38,9 @@ module JsonRpc
 
     class Error < RuntimeError
       attr_reader :status, :code, :msg
-      attr_accessor :id
-      def initialize status, code, msg
-        @status, @code, @msg = status, code, msg
+      attr_accessor :id, :msg_debug
+      def initialize status, code, msg, msg_debug = nil
+        @status, @code, @msg, @msg_debug = status, code, msg, msg_debug
       end
       def result
         res = {"jsonrpc" => "2.0", "id" => id,
@@ -49,11 +49,14 @@ module JsonRpc
         res.delete_if { |k, v| v == nil}
         res.to_json
       end
+      def to_s
+        msg_debug || super
+      end
     end
 
-    def self.error index, id = nil
+    def self.error index, id = nil, debug_msg = nil
       id = nil unless id.is_a? Fixnum
-      ex = Rpc::Error.new *ErrorProtocol[index]
+      ex = Rpc::Error.new *ErrorProtocol[index], debug_msg
       ex.id = id
       ex
     end
@@ -62,7 +65,7 @@ module JsonRpc
       return 200 if request["jsonrpc"] == Version and
         request["method"].kind_of?(String) and
         request["method"] != ""
-      raise error :invalid_request, request["id"]
+      raise error :invalid_request, request["id"], "invalid request: #{request.inspect}"
     end
 
     def self.parse env
@@ -73,15 +76,15 @@ module JsonRpc
         when "GET"
           req = Rack::Request.new(env)
           obj = req.params
-          obj["id"] = obj["id"] ? obj["id"].to_i : nil
-          obj["params"] = JSON::parse(obj["params"])
+          obj["id"] = obj["id"].to_i
+          obj["params"] = obj["params"] ? JSON::parse(obj["params"]) : []
           obj
         else
-          raise error :invalid_request
+          raise error :invalid_request, nil, "invalid params: #{obj.inspect}"
         end
 
-      rescue JSON::ParserError, Exception
-        raise error :parse_error
+      rescue JSON::ParserError => e
+        raise error :parse_error, nil, "JSON parsing error: #{e}"
       end
     end
 
@@ -89,7 +92,7 @@ module JsonRpc
       method, params = Prefix + request["method"], request["params"]
 
       unless ctrl.respond_to? method
-        raise error :method_not_found, request["id"]
+        raise error :method_not_found, request["id"], "method `#{method}` not found"
       end
 
       result = ctrl.send(method, *params)
