@@ -15,7 +15,7 @@ require 'json-rpc'
 class SyncApp
   include JsonRpc
   def call env
-    result = dispatch(env) { |e|
+    result = rpc_call(env) { |e|
       logger.info "#{e}"
     }
     result
@@ -37,7 +37,7 @@ class AsyncApp
   include JsonRpc
   AsyncResponse = [-1, {}, []].freeze
   def call env
-    result = dispatch(env)
+    result = rpc_call(env)
     env['async.callback'].call result
     AsyncResponse
   end
