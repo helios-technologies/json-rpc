@@ -38,8 +38,6 @@ class AsyncApp
   AsyncResponse = [-1, {}, []].freeze
   def call env
     result = rpc_call(env)
-    env['async.callback'].call result
-    AsyncResponse
   end
 
   def rpc_sum a, b
@@ -56,7 +54,8 @@ end
 Test it works:
 
 ~~~~~~ {sh}
-$ curl "localhost:3000/rpc?jsonrpc=2.0&method=sum&params=%5B21%2C21%5D"
+$ thin -R example.ru -p 4242 -d start
+$ curl "http://localhost:4242/rpc?jsonrpc=2.0&method=sum&params=%5B21%2C21%5D"
 {"jsonrpc":"2.0","id":0,"result":42}
 ~~~~~~
 

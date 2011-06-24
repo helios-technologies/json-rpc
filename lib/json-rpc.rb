@@ -20,7 +20,15 @@ module JsonRpc
       ecb.call(e) if ecb
     end
 
-    [status, {'Content-Type' => Rpc::ContentType}, result]
+    header = {'Content-Type' => Rpc::ContentType}
+
+    if result.is_a?(Rpc::AsyncResult)
+      result.status = status
+      result.header = header
+      return [-1, {}, result]
+    end
+
+    [status, header, result]
   end
 
   module Rpc
@@ -73,14 +81,14 @@ module JsonRpc
         case env["REQUEST_METHOD"]
         when "POST"
           JSON.parse(env["rack.input"].read)
-        when "GET"
+        when /^(GET|HEAD)$/
           req = Rack::Request.new(env)
           obj = req.params
           obj["id"] = obj["id"].to_i
           obj["params"] = obj["params"] ? JSON::parse(obj["params"]) : []
           obj
         else
-          raise error :invalid_request, nil, "invalid params: #{obj.inspect}"
+          raise error :invalid_request, nil, "unsupported method #{env["REQUEST_METHOD"]} params: #{obj.inspect}"
         end
 
       rescue JSON::ParserError => e
@@ -114,9 +122,21 @@ module JsonRpc
       include EventMachine::Deferrable
 
       attr_reader :response
-      attr_accessor :id
+      attr_accessor :id, :status, :header
+
+      def initialize env = nil
+        @env = env
+        @status = 200
+        @header = {}
+      end
+
+      def send_header
+        raise "You should pass env to AsyncResult.new()" unless @env
+        @env['async.callback'].call([@status, @header, self])
+      end
 
       def reply obj
+        send_header unless @callback
         @callback.call(Rpc::forge_response(obj, @id))
       end
 
