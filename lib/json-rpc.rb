@@ -147,10 +147,12 @@ module JsonRpc
         @callback.call(Rpc::forge_response(obj, @id))
       end
 
-      def failed msg = nil
-        @status = 500
+      def failed error_code = :internal_error, msg = nil
+        e = Rpc::error(error_code, id, msg)
+        @status = e.status
         send_header
-        reply Error.new(*ErrorProtocol[:internal_error], msg).result
+        @callback.call(e.result)
+        succeed
       end
 
       #FIXME thin specific
