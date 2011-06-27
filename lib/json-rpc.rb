@@ -51,10 +51,15 @@ module JsonRpc
         @status, @code, @msg, @msg_debug = status, code, msg, msg_debug
       end
       def result
-        res = {"jsonrpc" => "2.0", "id" => id,
-          "error" => {"code" => code, "message" => msg}
+        res = {
+          "id" => id,
+          "jsonrpc" => "2.0",
+          "error" => {
+            "code" => code,
+            "message" => msg
+          }
         }
-        res.delete_if { |k, v| v == nil}
+        res.delete_if { |k, v| v == nil }
         res.to_json
       end
       def to_s
@@ -128,16 +133,24 @@ module JsonRpc
         @env = env
         @status = 200
         @header = {}
+        @header_sent = false
       end
 
       def send_header
         raise "You should pass env to AsyncResult.new()" unless @env
-        @env['async.callback'].call([@status, @header, self])
+        @env['async.callback'].call([@status, @header, self]) unless @header_sent
+        @header_sent = true
       end
 
       def reply obj
         send_header unless @callback
         @callback.call(Rpc::forge_response(obj, @id))
+      end
+
+      def failed msg = nil
+        @status = 500
+        send_header
+        reply Error.new(*ErrorProtocol[:internal_error], msg).result
       end
 
       #FIXME thin specific
