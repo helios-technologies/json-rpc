@@ -23,6 +23,7 @@ module JsonRpc
     header = {'Content-Type' => Rpc::ContentType}
 
     if result.is_a?(Rpc::AsyncResult)
+      result.env = env
       result.status = status
       result.header = header
       return [-1, {}, result]
@@ -126,7 +127,7 @@ module JsonRpc
       include EventMachine::Deferrable
 
       attr_reader :response
-      attr_accessor :id, :status, :header
+      attr_accessor :id, :status, :header, :env
 
       def initialize env = nil
         @env = env
