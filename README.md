@@ -37,7 +37,7 @@ class AsyncApp
   include JsonRpc
   AsyncResponse = [-1, {}, []].freeze
   def call env
-    result = rpc_call(env)
+    rpc_call(env)
   end
 
   def rpc_sum a, b
