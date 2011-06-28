@@ -53,7 +53,7 @@ module JsonRpc
       def result
         res = {
           "id" => id,
-          "jsonrpc" => "2.0",
+          "jsonrpc" => Version,
           "error" => {
             "code" => code,
             "message" => msg
@@ -117,8 +117,7 @@ module JsonRpc
     end
 
     def self.forge_response result, id = nil
-      return nil if id == nil
-      {"jsonrpc" => "2.0", "id" => id, "result" => result}.to_json
+      {"jsonrpc" => Version, "id" => id.to_i, "result" => result}.to_json
     end
 
     # The class RpcDeferrable is useful helps you to build a Json Rpc server
