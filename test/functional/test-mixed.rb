@@ -60,4 +60,14 @@ end
 
 class AsyncTest < RpcTest
   include MixedTest
+
+  def test_cookies
+    post_off = true
+    call("set_cookie")
+    call("get_cookie"){ |obj|
+      assert_equal "Hello", obj["result"]
+    }
+    post_off = false
+  end
+
 end

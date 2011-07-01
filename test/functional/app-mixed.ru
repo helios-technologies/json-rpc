@@ -44,68 +44,76 @@ class AsyncApp
   alias :call :rpc_call
 
   def rpc_sum a, b
-    result = Rpc::AsyncResult.new
-    EventMachine::next_tick do
-      result.reply a + b
-      result.succeed
+    wrap_async do
+      a + b
     end
-    result
   end
 
   def rpc_true
-    result = Rpc::AsyncResult.new
-    EventMachine::next_tick do
-      result.reply true
-      result.succeed
+    wrap_async do
+      true
     end
-    result
   end
 
   def rpc_false
-    result = Rpc::AsyncResult.new
-    EventMachine::next_tick do
-      result.reply false
-      result.succeed
+    wrap_async do
+      false
     end
-    result
   end
 
   def rpc_array
-    result = Rpc::AsyncResult.new
-    EventMachine::next_tick do
-      result.reply [1,2,3]
-      result.succeed
+    wrap_async do
+      [1,2,3]
     end
-    result
   end
 
   def rpc_empty_array
-    result = Rpc::AsyncResult.new
-    EventMachine::next_tick do
-      result.reply []
-      result.succeed
+    wrap_async do
+      []
     end
-    result
   end
 
   def rpc_hash
-    result = Rpc::AsyncResult.new
-    EventMachine::next_tick do
-      result.reply("a" => "Apple", "b" => "Banana")
-      result.succeed
+    wrap_async do
+      {"a" => "Apple", "b" => "Banana"}
     end
-    result
   end
 
   def rpc_repeat *params
+    wrap_async do
+      params
+    end
+  end
+
+  def rpc_set_cookie
+    wrap_async do |resp|
+      resp.set_cookie "dima", "Hello"
+      "Cookie set"
+    end
+  end
+
+  def rpc_get_cookie
+    wrap_async do |resp|
+      req = Rack::Request.new(resp.env)
+      cookies = req.cookies()
+      cookies["dima"]
+    end
+  end
+
+  private
+
+  def wrap_async &block
     result = Rpc::AsyncResult.new
     EventMachine::next_tick do
-      result.reply params
-      result.succeed
+      e = catch(:Error) {
+        result.reply block.call result
+        result.succeed
+        nil
+      }
+      result.failed e[:code], e[:msg] if e
     end
     result
   end
-
 end
 
 map '/rpc-sync' do
