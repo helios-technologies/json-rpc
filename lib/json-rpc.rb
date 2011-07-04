@@ -1,7 +1,6 @@
 require 'json'
 require 'eventmachine'
 require 'uri'
-require 'rack/utils'
 
 module JsonRpc
 
@@ -137,10 +136,6 @@ module JsonRpc
         @status = 200
         @header = {}
         @header_sent = false
-      end
-
-      def set_cookie(key, value)
-        Rack::Utils.set_cookie_header!(@header, key, value)
       end
 
       def send_header
