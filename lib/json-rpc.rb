@@ -14,11 +14,13 @@ module JsonRpc
       request = Rpc::parse env
       status = Rpc::validate request
       result = Rpc::route request, self
-
-    rescue Rpc::Error => e
+    rescue Exception, Rpc::Error => e
+      ecb.call(e) if ecb
+     unless e.is_a?(Rpc::Error)
+        e = Rpc::error :internal_error
+      end
       status = e.status
       result = e.result
-      ecb.call(e) if ecb
     end
 
     header = {'Content-Type' => Rpc::ContentType}
