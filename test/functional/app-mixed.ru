@@ -85,21 +85,6 @@ class AsyncApp
     end
   end
 
-  def rpc_set_cookie
-    wrap_async do |resp|
-      resp.set_cookie "dima", "Hello"
-      "Cookie set"
-    end
-  end
-
-  def rpc_get_cookie
-    wrap_async do |resp|
-      req = Rack::Request.new(resp.env)
-      cookies = req.cookies()
-      cookies["dima"]
-    end
-  end
-
   private
 
   def wrap_async &block
