@@ -28,10 +28,10 @@ module JsonRpc
       result.env = env
       result.status = status
       result.header = header
-      return [-1, {}, result]
+      return [-1, {}, [result]]
     end
 
-    [status, header, result]
+    [status, header, [result]]
   end
 
   module Rpc
