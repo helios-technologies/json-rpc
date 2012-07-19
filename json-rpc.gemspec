@@ -7,5 +7,6 @@ Gem::Specification.new do |s|
   s.email             = 'contact@heliostech.hk'
   s.files             = Dir.glob("{lib,test,example}/**/**") + %w(README.md)
   s.homepage          = 'https://github.com/helios-technologies/json-rpc'
+  s.add_dependency "eventmachine"
   s.rubyforge_project = "[none]"
 end

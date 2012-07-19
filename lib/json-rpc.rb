@@ -4,6 +4,8 @@ require 'uri'
 
 module JsonRpc
 
+  attr_accessor :env
+
   # Call the correct method for each query
   # The method should be prefixed by rpc_
   # If the method doesn't exists, an error will be return in JSON
@@ -12,7 +14,7 @@ module JsonRpc
     begin
       request = Rpc::parse env
       status = Rpc::validate request
-      result = Rpc::route request, self
+      result = Rpc::route env, request, self
     rescue Exception, Rpc::Error => e
       ecb.call(e) if ecb
      unless e.is_a?(Rpc::Error)
@@ -28,10 +30,10 @@ module JsonRpc
       result.env = env
       result.status = status
       result.header = header
-      return [-1, {}, result]
+      return [-1, {}, [result]]
     end
 
-    [status, header, result]
+    [status, header, [result]]
   end
 
   module Rpc
@@ -104,13 +106,14 @@ module JsonRpc
       end
     end
 
-    def self.route request, ctrl
+    def self.route env, request, ctrl
       method, params = Prefix + request["method"], request["params"]
 
       unless ctrl.respond_to? method
         raise error :method_not_found, request["id"], "method `#{method}` not found"
       end
 
+      ctrl.env = env
       result = ctrl.send(method, *params)
       if result.is_a? AsyncResult
         result.id = request["id"]
